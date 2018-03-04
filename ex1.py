@@ -4,6 +4,33 @@ import argparse
 from pattern.web import URL, plaintext, DOM, abs
 from pattern.vector import count,words, LEMMA
 
+class Emitter:
+    def __init__(self, console = False, filepath = None):
+        self.filepath = filepath
+        self.console = console
+        self.file = None
+                
+    def emit(self, string):
+        if self.file:
+            self.file.write(string + '\r\n')
+        if self.console:
+            print string
+                         
+    def __enter__(self):
+        if self.filepath:
+            try:
+                self.file = open(self.filepath, "w")
+            except IOError as err:
+                sys.exit("OSError: " + str(err))
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.file:
+            self.file.close()
+        
+
+            
+
 def initArgParser(parser):
     parser.add_argument('-site', metavar = 'URL', required = True, help = 'site address to be anylyzed')
     parser.add_argument('-file', metavar = 'FILE_PATH', help = 'output filename')
@@ -29,8 +56,6 @@ def downloadPageContent(url):
     content = decodePageContent(content)
     return content
 
-
-
 def main():
     parser = argparse.ArgumentParser(description='Web mining excersise 1')
     initArgParser(parser)
@@ -41,28 +66,30 @@ def main():
     content = downloadPageContent(url)
     dom = DOM(content)
     
-    if args.text:
-        print "Words: \r\n"
-        w = count(words(plaintext(content)))
-        for key, value in w.iteritems():
-            print "{0}: {1}".format(key.encode('utf-8'), value)
-        print "\r\n"
-    
-    if args.a:
-        print "Links: \r\n"
-        for link in dom('a'):
-            print abs(link.attributes.get('href', ''), base = url.redirect or url.string)
-        print "\r\n"
-    
-    if args.image:
-        print "Images: \r\n"
-        for image in dom('img'):
-            print abs(image.attributes.get('src', ''), base = url.redirect or url.string)
-        print "\r\n"
-    
-    if args.script:
-        print "Scripts: \r\n"
-        for script in dom('script'):
-            print script
+    with Emitter(args.console, args.file) as output:
+        
+        if args.text:
+            w = count(words(plaintext(content)))
+            output.emit("Words: \r\n")
+            for key, value in w.iteritems():
+                output.emit("{0}: {1}".format(key.encode('utf-8'), value))
+            output.emit("\r\n")
+                
+        if args.a:
+            output.emit("Links: \r\n")
+            for link in dom('a'):
+                output.emit(abs(link.attributes.get('href', ''), base = url.redirect or url.string))
+            output.emit("\r\n")
+        
+        if args.image:
+            output.emit("Images: \r\n")
+            for image in dom('img'):
+                output.emit(abs(image.attributes.get('src', ''), base = url.redirect or url.string))
+            output.emit("\r\n")
+        
+        if args.script:
+            output.emit ("Scripts: \r\n")
+            for script in dom('script'):
+                output.emit(str(script))
     
 main()
