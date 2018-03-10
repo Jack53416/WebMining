@@ -29,8 +29,6 @@ class Emitter:
             self.file.close()
         
 
-            
-
 def initArgParser(parser):
     parser.add_argument('-site', metavar = 'URL', required = True, help = 'site address to be anylyzed')
     parser.add_argument('-file', metavar = 'FILE_PATH', help = 'output filename')
@@ -56,6 +54,35 @@ def downloadPageContent(url):
     content = decodePageContent(content)
     return content
 
+def countWords(content, output):
+    w = count(words(plaintext(content)))
+    output.emit("Words: \r\n")
+    for key, value in w.iteritems():
+        output.emit("{0}: {1}".format(key.encode('utf-8'), value))
+    output.emit("\r\n")    
+
+def getLinks(url, dom, output):
+    output.emit("Links: \r\n")
+    for link in dom('a'):
+        output.emit(abs(link.attributes.get('href', ''), base = url.redirect or url.string))
+    output.emit("\r\n")    
+
+def getImages(url, dom, output):
+    output.emit("Images: \r\n")
+    for image in dom('img'):
+        output.emit(abs(image.attributes.get('src', ''), base = url.redirect or url.string))
+    output.emit("\r\n")
+    
+def getScripts(url, dom, output):
+    output.emit ("Scripts: \r\n")
+    for script in dom('script'):
+        src = script.attributes.get('src', '')
+        if(src):
+            output.emit(abs(src, base = url.redirect or url.string))
+        else:
+            output.emit(str(script))
+    output.emit("\r\n")
+
 def main():
     parser = argparse.ArgumentParser(description='Web mining excersise 1')
     initArgParser(parser)
@@ -69,27 +96,14 @@ def main():
     with Emitter(args.console, args.file) as output:
         
         if args.text:
-            w = count(words(plaintext(content)))
-            output.emit("Words: \r\n")
-            for key, value in w.iteritems():
-                output.emit("{0}: {1}".format(key.encode('utf-8'), value))
-            output.emit("\r\n")
+            countWords(content, output)
                 
         if args.a:
-            output.emit("Links: \r\n")
-            for link in dom('a'):
-                output.emit(abs(link.attributes.get('href', ''), base = url.redirect or url.string))
-            output.emit("\r\n")
+            getLinks(url, dom, output)
         
         if args.image:
-            output.emit("Images: \r\n")
-            for image in dom('img'):
-                output.emit(abs(image.attributes.get('src', ''), base = url.redirect or url.string))
-            output.emit("\r\n")
+            getImages(url, dom, output)
         
         if args.script:
-            output.emit ("Scripts: \r\n")
-            for script in dom('script'):
-                output.emit(str(script))
-    
+            getScripts(url, dom, output)
 main()
