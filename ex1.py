@@ -1,7 +1,8 @@
 import sys
 import re
 import argparse
-from pattern.web import URL, plaintext, DOM, abs
+import urlparse
+from pattern.web import URL, plaintext, DOM, abs, URLError
 from pattern.vector import count,words, LEMMA
 
 class Emitter:
@@ -32,6 +33,7 @@ class Emitter:
 def initArgParser(parser):
     parser.add_argument('-site', metavar = 'URL', required = True, help = 'site address to be anylyzed')
     parser.add_argument('-file', metavar = 'FILE_PATH', help = 'output filename')
+    parser.add_argument('-url', nargs = '+', help = 'list of site adresses to be anylyzed')
     parser.add_argument('-console', action = 'store_const', const = True, default = False,  help = 'output displayed directly on the console')
     parser.add_argument('-text', action = 'store_const', const = True, default = False, help = 'analyze all text on the website and count number of occurances of each word')
     parser.add_argument('-a', action = 'store_const', const = True, default = False, help = 'return all links present on website')
@@ -55,7 +57,7 @@ def downloadPageContent(url):
     return content
 
 def countWords(content, output):
-    w = count(words(plaintext(content)))
+    w = count(words(plaintext(content), filter = lambda w: w.strip("'").isalpha()))
     output.emit("Words: \r\n")
     for key, value in w.iteritems():
         output.emit("{0}: {1}".format(key.encode('utf-8'), value))
@@ -83,27 +85,39 @@ def getScripts(url, dom, output):
             output.emit(str(script))
     output.emit("\r\n")
 
-def main():
-    parser = argparse.ArgumentParser(description='Web mining excersise 1')
-    initArgParser(parser)
-    args = parser.parse_args()
-    if args.console == False and args.file == None:
-        sys.exit("Error, Invalid output target!")
-    url = URL(string = args.site)
-    content = downloadPageContent(url)
-    dom = DOM(content)
+def parseUrl(urlString):
+    match = re.search('//', urlString)
+    if not match:
+        urlString = '//' + urlString
     
-    with Emitter(args.console, args.file) as output:
-        
-        if args.text:
-            countWords(content, output)
-                
-        if args.a:
-            getLinks(url, dom, output)
-        
-        if args.image:
-            getImages(url, dom, output)
-        
-        if args.script:
-            getScripts(url, dom, output)
-main()
+    url = urlparse.urlsplit(urlString)
+    if not url.scheme:
+        url = url._replace(scheme = 'http')
+
+    return url.geturl()
+    
+
+parser = argparse.ArgumentParser(description='Web mining excersise 1')
+initArgParser(parser)
+args = parser.parse_args()
+if args.console == False and args.file == None:
+    parser.exit("Error, Invalid output target!")
+    
+url = URL(string = parseUrl(args.site))
+content = downloadPageContent(url)
+dom = DOM(content)
+
+with Emitter(args.console, args.file) as output:
+    
+    if args.text:
+        countWords(content, output)
+            
+    if args.a:
+        getLinks(url, dom, output)
+    
+    if args.image:
+        getImages(url, dom, output)
+    
+    if args.script:
+        getScripts(url, dom, output)
+
