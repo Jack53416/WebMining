@@ -1,9 +1,8 @@
 import argparse
-from webPage import WebPage
-from emitter import Emitter
+from webPage import WebPage, WebCrawler
 
 def initArgParser(parser):
-    parser.add_argument('-site', metavar = 'URL', required = True, help = 'site address to be anylyzed')
+    parser.add_argument('-site', metavar = 'URL', required = False, help = 'site address to be anylyzed')
     parser.add_argument('-file', metavar = 'FILE_PATH', help = 'output filename')
     parser.add_argument('-url', nargs = '+', help = 'list of site adresses to be anylyzed')
     parser.add_argument('-console', action = 'store_const', const = True, default = False,  help = 'output displayed directly on the console')
@@ -22,27 +21,10 @@ def main(args = None):
     if args.console == False and args.file == None:
         parser.exit("Error, Invalid output target!")
     
-    page = WebPage(args.site)
-    page.downloadContent()
-    
-    with Emitter(args.console, args.file) as output:
-        output.clear()
-        if args.text:
-            output.emitLine("Words: \r\n")
-            output.emit(page.countWords())
-            output.emitLine('')
-        if args.a:
-            output.emitLine("Links: \r\n")
-            output.emit(page.getLinks())
-            output.emitLine('')
-        if args.image:
-            output.emitLine("Images: \r\n")
-            output.emit(page.getImages())
-            output.emitLine('')
-        if args.script:
-            output.emitLine("Scripts: \r\n")
-            output.emit(page.getScripts())
-            output.emitLine('')
+    c = WebCrawler(args, delay = 3 )
+    while not c.done:
+        c.crawl()
+   
     
 if __name__ == "__main__":
     main()
