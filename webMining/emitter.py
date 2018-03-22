@@ -41,9 +41,9 @@ class Emitter:
             print string
     
     def emit(self, data):
-        if type(data) is list:
-            self.printList(data)
-        elif type(data) is dict or Counter:
+        if isinstance(data, dict):
             self.printDict(data)
+        elif type(data) is list or set:
+            self.printList(data)
         else:
             self.emitLine(unicode(data))

@@ -19,6 +19,7 @@ def initArgParser(parser):
     parser.add_argument('-a', action = 'store_const', const = True, default = False, help = 'return all links present on website')
     parser.add_argument('-script', action = 'store_const', const = True, default = False, help = 'return all scripts present on website')
     parser.add_argument('-image', action = 'store_const', const = True, default = False, help = 'return all images present on website')
+    parser.add_argument('-depth', type = int, default = 1, help = 'domain depth of the crawler')
 
 def main(args = None):
     """The main routine"""
@@ -35,13 +36,9 @@ def main(args = None):
     with Emitter(args.console, args.file) as output:
         output.clear()
    
-    #p = Polly(links=args.url, domains = ["9gag.com"])
-    #while not p.done:
-     #   p.crawl(method=DEPTH , cached=False)
-    c = WebCrawler(args, delay = 3 )
+    c = WebCrawler(args, depth = args.depth)
     while not c.done:
         c.crawl()
-   
     
 if __name__ == "__main__":
     main()

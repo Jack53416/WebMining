@@ -26,7 +26,7 @@ class WebPage:
         return self.url.string == other.url.string
     
     def decodeContent(self):
-        match = re.search("<meta .* charset=([a-zA-Z0-9]*) .*\/>", self.content)
+        match = re.search("<meta .* charset=([a-zA-Z0-9\-]*).*\/>", self.content)
         if match:
             encoding = match.group(1)
             try:
@@ -39,7 +39,7 @@ class WebPage:
         try:
             if self.url.mimetype != "text/html":
                 raise URLError(str(self.url.mimetype) + " is not supported content type")
-            self.content = self.url.download(cached = False, timeout = 5, unicode = True)  
+            self.content = self.url.download(cached = False, timeout = 5)  
         except httplib.InvalidURL:
             raise URLError("error")
 
@@ -88,18 +88,43 @@ class WebPage:
 
         return url.geturl()
 
+class Result(object):
+    def __init__(self, wordStats = Counter(), links = set(), images = set(), scripts = set()):
+        self.wordStats, self.links, self.images, self.scripts = \
+            wordStats, links, images, scripts
+    def emit(self, output):
+        result = unicode('')
+        if len(self.wordStats) > 0:
+            output.emitLine("Words: \r\n")
+            output.emit(self.wordStats)
+            output.emitLine('')
+        if len(self.links) > 0:
+            output.emitLine("Links: \r\n")
+            output.emit(self.links)
+            output.emitLine('')
+        if len(self.images) > 0:
+            output.emitLine("Images \r\n")
+            output.emit(self.images)
+            output.emitLine('')
+        if len(self.scripts) > 0:
+            output.emitLine("scripts: \r\n")
+            output.emit(self.scripts)
+            output.emitLine('')
+            
+        
 class WebCrawler():
-    def __init__(self, args, depth = 5, delay = 20.0):
+    def __init__(self, args, depth = 1):
         self.links = [WebPage(x) for x in args.url]
         self.depth = depth
-        self.delay = delay
         self.history = []
         self.done = False
         self.options = args
+        self.results = {link.url.domain : Result() for link in self.links}
         
     def crawl(self):
         if len(self.links) < 1:
             self.done = True
+            self.finish()
             return
         site = self.links.pop(0)
         try:
@@ -119,31 +144,28 @@ class WebCrawler():
                     self.links.insert(0,link)
     
         self.visit(site)
+        site.cleanCashedData()
 
         
     
     def visit(self, page):
-        with Emitter(self.options.console, self.options.file) as output:
-            output.emitLine('visited:'+ page.url.string)
-            if self.options.text:
-                output.emitLine("Words: \r\n")
-                output.emit(page.countWords())
-                output.emitLine('')
-            if self.options.a:
-                output.emitLine("Links: \r\n")
-                output.emit(page.getLinks())
-                output.emitLine('')
-            if self.options.image:
-                output.emitLine("Images: \r\n")
-                output.emit(page.getImages())
-                output.emitLine('')
-            if self.options.script:
-                output.emitLine("Scripts: \r\n")
-                output.emit(page.getScripts())
-                output.emitLine('')
-            
+        if self.options.text:
+            self.results[page.url.domain].wordStats += page.countWords()
+        if self.options.a:
+            links = [link.url.string for link in page.getLinks()]
+            self.results[page.url.domain].links.update(links)
+        if self.options.image:
+            self.results[page.url.domain].images.update(page.getImages())
+        if self.options.script:
+            self.results[page.url.domain].scripts.update(page.getScripts())
 
     def fail(self, link, error):
         print 'failed:', link.url.string, 'err: ', error
     
-    
+    def finish(self):
+        with Emitter(self.options.console, self.options.file) as output:
+            for key, value in self.results.iteritems():
+                output.emitLine(key)
+                value.emit(output)
+            print "max depth: ", max(site.depth for site in self.history)
+            print "sites visited: ", len(self.history)
