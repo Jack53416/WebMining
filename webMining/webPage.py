@@ -5,7 +5,7 @@ from collections import Counter
 from pattern.web import URL, plaintext, DOM, abs, URLError
 from pattern.web import Crawler, HTMLLinkParser
 from pattern.vector import count,words, LEMMA
-
+from scipy import spatial
 from emitter import Emitter
 
 
@@ -92,6 +92,17 @@ class Result(object):
     def __init__(self, wordStats = Counter(), links = set(), images = set(), scripts = set()):
         self.wordStats, self.links, self.images, self.scripts = \
             wordStats, links, images, scripts
+    
+    def cosineSimilarity(self, other):
+        jointVector = self.wordStats + other.wordStats
+        selfVector = []
+        otherVector = []
+        for key in jointVector.keys():
+            #print key + ' first: ' + str(self.wordStats[key]) + ' second ' + str(other.wordStats[key]) 
+            selfVector.append(self.wordStats[key])
+            otherVector.append(other.wordStats[key])
+        return 1 - spatial.distance.cosine(selfVector, otherVector)
+    
     def emit(self, output):
         result = unicode('')
         if len(self.wordStats) > 0:
@@ -167,5 +178,10 @@ class WebCrawler():
             for key, value in self.results.iteritems():
                 output.emitLine(key)
                 value.emit(output)
+            
+            #keys = self.results.keys()
+            #print self.results[keys[0]].cosineSimilarity(self.results[keys[1]])
+                
             print "max depth: ", max(site.depth for site in self.history)
             print "sites visited: ", len(self.history)
+    
