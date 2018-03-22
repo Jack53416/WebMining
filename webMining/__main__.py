@@ -1,5 +1,14 @@
+import sys
 import argparse
 from webPage import WebPage, WebCrawler
+from emitter import Emitter
+
+from pattern.web import Crawler, BREADTH, DEPTH
+class Polly(Crawler): 
+    def visit(self, link, source=None):
+        print 'visited:', repr(link.url), 'from:', link.referrer
+    def fail(self, link):
+        print 'failed:', repr(link.url)
 
 def initArgParser(parser):
     parser.add_argument('-site', metavar = 'URL', required = False, help = 'site address to be anylyzed')
@@ -13,6 +22,8 @@ def initArgParser(parser):
 
 def main(args = None):
     """The main routine"""
+    reload(sys)  
+    sys.setdefaultencoding('utf8')
     
     parser = argparse.ArgumentParser(description='Web mining excersise 1')
     initArgParser(parser)
@@ -21,6 +32,12 @@ def main(args = None):
     if args.console == False and args.file == None:
         parser.exit("Error, Invalid output target!")
     
+    with Emitter(args.console, args.file) as output:
+        output.clear()
+   
+    #p = Polly(links=args.url, domains = ["9gag.com"])
+    #while not p.done:
+     #   p.crawl(method=DEPTH , cached=False)
     c = WebCrawler(args, delay = 3 )
     while not c.done:
         c.crawl()

@@ -1,4 +1,5 @@
 import sys
+from collections import Counter
 
 class Emitter:
     def __init__(self, console = False, filepath = None):
@@ -42,7 +43,7 @@ class Emitter:
     def emit(self, data):
         if type(data) is list:
             self.printList(data)
-        elif type(data) is dict:
+        elif type(data) is dict or Counter:
             self.printDict(data)
         else:
             self.emitLine(unicode(data))
