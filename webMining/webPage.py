@@ -1,6 +1,7 @@
 import re
 import urlparse
 import httplib
+import itertools
 from collections import Counter
 from pattern.web import URL, plaintext, DOM, abs, URLError
 from pattern.web import Crawler, HTMLLinkParser
@@ -98,9 +99,11 @@ class Result(object):
         selfVector = []
         otherVector = []
         for key in jointVector.keys():
-            #print key + ' first: ' + str(self.wordStats[key]) + ' second ' + str(other.wordStats[key]) 
+            print key + ' first: ' + str(self.wordStats[key]) + ' second ' + str(other.wordStats[key]) 
             selfVector.append(self.wordStats[key])
             otherVector.append(other.wordStats[key])
+        #print selfVector
+        #print otherVector
         return 1 - spatial.distance.cosine(selfVector, otherVector)
     
     def emit(self, output):
@@ -160,6 +163,7 @@ class WebCrawler():
         
     
     def visit(self, page):
+        print 'visited: ', page.url.string
         if self.options.text:
             self.results[page.url.domain].wordStats += page.countWords()
         if self.options.a:
@@ -174,14 +178,18 @@ class WebCrawler():
         print 'failed:', link.url.string, 'err: ', error
     
     def finish(self):
+        """Print all results and calculate cosine similarity between all provided ur;s"""
         with Emitter(self.options.console, self.options.file) as output:
             for key, value in self.results.iteritems():
                 output.emitLine(key)
                 value.emit(output)
             
-            #keys = self.results.keys()
-            #print self.results[keys[0]].cosineSimilarity(self.results[keys[1]])
-                
-            print "max depth: ", max(site.depth for site in self.history)
-            print "sites visited: ", len(self.history)
+            if len(self.results) > 1 and self.options.text and self.options.cos:
+                combinations = [list(x) for x in itertools.combinations(self.results.keys(), 2)]
+                for pair in combinations:
+                    cosValue = self.results[pair[0]].cosineSimilarity(self.results[pair[1]])
+                    output.emitLine(u"cos similarity between:{0} and {1} = {2}".format(pair[0], pair[1], cosValue))
     
+            output.emitLine('')
+            output.emitLine("max depth: " + str(max(site.depth for site in self.history)))
+            output.emitLine("sites visited: " + str(len(self.history)))

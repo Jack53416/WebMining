@@ -11,7 +11,6 @@ class Polly(Crawler):
         print 'failed:', repr(link.url)
 
 def initArgParser(parser):
-    parser.add_argument('-site', metavar = 'URL', required = False, help = 'site address to be anylyzed')
     parser.add_argument('-file', metavar = 'FILE_PATH', help = 'output filename')
     parser.add_argument('-url', nargs = '+', help = 'list of site adresses to be anylyzed')
     parser.add_argument('-console', action = 'store_const', const = True, default = False,  help = 'output displayed directly on the console')
@@ -20,6 +19,7 @@ def initArgParser(parser):
     parser.add_argument('-script', action = 'store_const', const = True, default = False, help = 'return all scripts present on website')
     parser.add_argument('-image', action = 'store_const', const = True, default = False, help = 'return all images present on website')
     parser.add_argument('-depth', type = int, default = 1, help = 'domain depth of the crawler')
+    parser.add_argument('-cos', action = 'store_const', const = True, default = False, help = 'calculate cosine similarity between provided urls if the option text was enabled')
 
 def main(args = None):
     """The main routine"""
