@@ -12,7 +12,7 @@ class Polly(Crawler):
 
 def initArgParser(parser):
     parser.add_argument('-file', metavar = 'FILE_PATH', help = 'output filename')
-    parser.add_argument('-url', nargs = '+', help = 'list of site adresses to be anylyzed')
+    parser.add_argument('-url', nargs = '+', required = True, help = 'list of site adresses to be anylyzed')
     parser.add_argument('-console', action = 'store_const', const = True, default = False,  help = 'output displayed directly on the console')
     parser.add_argument('-text', action = 'store_const', const = True, default = False, help = 'analyze all text on the website and count number of occurances of each word')
     parser.add_argument('-a', action = 'store_const', const = True, default = False, help = 'return all links present on website')
@@ -32,13 +32,15 @@ def main(args = None):
     
     if args.console == False and args.file == None:
         parser.exit("Error, Invalid output target!")
+    try:
+        with Emitter(args.console, args.file) as output:
+            output.clear()
     
-    with Emitter(args.console, args.file) as output:
-        output.clear()
-   
-    c = WebCrawler(args, depth = args.depth)
-    while not c.done:
-        c.crawl()
+        c = WebCrawler(args, depth = args.depth)
+        while not c.done:
+            c.crawl()
+    except Exception as e:
+        parser.exit(type(e).__name__ + ': ' + str(e))
     
 if __name__ == "__main__":
     main()

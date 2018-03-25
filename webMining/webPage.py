@@ -3,7 +3,7 @@ import urlparse
 import httplib
 import itertools
 from collections import Counter
-from pattern.web import URL, plaintext, DOM, abs, URLError
+from pattern.web import URL, plaintext, DOM, abs, URLError, URLTimeout, HTTP404NotFound, MIMETYPE_WEBPAGE
 from pattern.web import Crawler, HTMLLinkParser
 from pattern.vector import count,words, LEMMA
 from scipy import spatial
@@ -38,11 +38,11 @@ class WebPage:
         
     def downloadContent(self):
         try:
-            if self.url.mimetype != "text/html":
+            if self.url.mimetype not in MIMETYPE_WEBPAGE:
                 raise URLError(str(self.url.mimetype) + " is not supported content type")
             self.content = self.url.download(cached = False, timeout = 5)  
         except httplib.InvalidURL:
-            raise URLError("error")
+            raise URLError("Invalid Url")
 
         self.decodeContent()
         self.dom = DOM(self.content)
@@ -99,7 +99,7 @@ class Result(object):
         selfVector = []
         otherVector = []
         for key in jointVector.keys():
-            print key + ' first: ' + str(self.wordStats[key]) + ' second ' + str(other.wordStats[key]) 
+            #print key + ' first: ' + str(self.wordStats[key]) + ' second ' + str(other.wordStats[key]) 
             selfVector.append(self.wordStats[key])
             otherVector.append(other.wordStats[key])
         #print selfVector
@@ -143,9 +143,12 @@ class WebCrawler():
         site = self.links.pop(0)
         try:
             site.downloadContent()
+        except HTTP404NotFound:
+            return self.fail(site, "404 not found")
+        except URLTimeout:
+            return self.fail(site, "Timeou error")
         except URLError as err:
-            self.fail(site, str(err))
-            return
+            return self.fail(site, str(err))
         
         self.history.append(site)
 
@@ -164,15 +167,18 @@ class WebCrawler():
     
     def visit(self, page):
         print 'visited: ', page.url.string
-        if self.options.text:
-            self.results[page.url.domain].wordStats += page.countWords()
-        if self.options.a:
-            links = [link.url.string for link in page.getLinks()]
-            self.results[page.url.domain].links.update(links)
-        if self.options.image:
-            self.results[page.url.domain].images.update(page.getImages())
-        if self.options.script:
-            self.results[page.url.domain].scripts.update(page.getScripts())
+        try:
+            if self.options.text:
+                self.results[page.url.domain].wordStats += page.countWords()
+            if self.options.a:
+                links = [link.url.string for link in page.getLinks()]
+                self.results[page.url.domain].links.update(links)
+            if self.options.image:
+                self.results[page.url.domain].images.update(page.getImages())
+            if self.options.script:
+                self.results[page.url.domain].scripts.update(page.getScripts())
+        except Exception as e:
+            print "Error parsing document: ", type(e).__name__ + ': ' + str(e) 
 
     def fail(self, link, error):
         print 'failed:', link.url.string, 'err: ', error
