@@ -6,6 +6,8 @@ from collections import Counter
 from pattern.web import URL, plaintext, DOM, abs, URLError, URLTimeout, HTTP404NotFound, MIMETYPE_WEBPAGE
 from pattern.web import Crawler, HTMLLinkParser
 from pattern.vector import count,words, LEMMA
+from pattern.graph import Graph
+
 from scipy import spatial
 from emitter import Emitter
 
@@ -19,6 +21,11 @@ class WebPage:
         self.dom = None
         self.parent = parent
         self.depth = depth
+        if parent is not None:
+            self.isExternal = parent.isExternal
+        else:
+            self.isExternal = False
+        self.links = []
     
     def __str__(self):
         return self.url.string
@@ -53,9 +60,14 @@ class WebPage:
         return Counter(wordDict)
 
     def getLinks(self):
-        links = [abs(x.url, base = self.url.redirect or self.url.string)
-                 for x in HTMLLinkParser().parse(self.content, url = self.url.string)]
-        return [WebPage(x, self, self.depth + 1) for x in links]
+        if len(self.links) == 0:
+            links = [abs(x.url, base = self.url.redirect or self.url.string)
+                    for x in HTMLLinkParser().parse(self.content, url = self.url.string)]
+            self.links =  [WebPage(x, self, self.depth + 1) for x in links]
+            for link in self.links:
+                if link.url.domain != self.url.domain:
+                    link.isExternal = True
+        return self.links
 
     def getImages(self):
         images = []
@@ -76,6 +88,7 @@ class WebPage:
     def cleanCashedData(self):
         self.content = None
         self.dom = None
+        self.links = []
     
     @staticmethod
     def parseUrl(urlString):
@@ -124,7 +137,6 @@ class Result(object):
             output.emitLine("scripts: \r\n")
             output.emit(self.scripts)
             output.emitLine('')
-            
         
 class WebCrawler():
     def __init__(self, args, depth = 1):
@@ -134,6 +146,11 @@ class WebCrawler():
         self.done = False
         self.options = args
         self.results = {link.url.domain : Result() for link in self.links}
+        
+        if args.graph or args.rank:
+            self.webGraph = Graph(distance = 30.0) 
+            for link in self.links:
+                self.webGraph.add_node(link.url.domain, radius = 15, fill = (1, 0, 0, 0.5))
         
     def crawl(self):
         if len(self.links) < 1:
@@ -146,27 +163,43 @@ class WebCrawler():
         except HTTP404NotFound:
             return self.fail(site, "404 not found")
         except URLTimeout:
-            return self.fail(site, "Timeou error")
+            return self.fail(site, "Timeout error")
         except URLError as err:
             return self.fail(site, str(err))
         
         self.history.append(site)
 
-        if site.depth < self.depth:
-            for link in site.getLinks():
-                if link not in self.links \
-                and link not in self.history \
-                and not link.url.anchor \
-                and link.url.domain == site.url.domain:
-                    self.links.insert(0,link)
-    
+        for link in site.getLinks():
+            if self.isValidForQueue(link):
+                if link.isExternal and (self.options.graph or self.options.rank):
+                    self.addDomainNode(link)
+                    if site.depth < self.depth:
+                        self.links.append(link)
+                elif not link.isExternal and site.depth < self.depth:
+                    self.links.insert(0, link)
         self.visit(site)
         site.cleanCashedData()
 
-        
+    def isValidForQueue(self, link):
+        if link not in self.links \
+            and link not in self.history \
+            and not link.url.anchor:
+                return True
+        return False
+                
+    def addDomainNode(self, page):
+        if page.parent.url.domain == page.url.domain:
+            return
+        if self.webGraph.node(page.url.domain) is None:
+            self.webGraph.add_node(page.url.domain, radius = 15)
+        if self.webGraph.edge(page.parent.url.domain, page.url.domain) is None:
+            self.webGraph.add_edge(page.parent.url.domain, page.url.domain, weight = 0.0, type = 'is-related-to')
     
     def visit(self, page):
         print 'visited: ', page.url.string
+        if page.isExternal:
+            self.webGraph.node(page.url.domain).fill = (0,1,0,0.5)
+            return
         try:
             if self.options.text:
                 self.results[page.url.domain].wordStats += page.countWords()
@@ -199,3 +232,6 @@ class WebCrawler():
             output.emitLine('')
             output.emitLine("max depth: " + str(max(site.depth for site in self.history)))
             output.emitLine("sites visited: " + str(len(self.history)))
+            
+            if self.options.graph:
+                self.webGraph.export('graph', directed=True, width = 1800, height = 1000, repulsion = 10)

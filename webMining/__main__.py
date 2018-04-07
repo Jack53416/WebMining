@@ -20,6 +20,8 @@ def initArgParser(parser):
     parser.add_argument('-image', action = 'store_const', const = True, default = False, help = 'return all images present on website')
     parser.add_argument('-depth', type = int, default = 1, help = 'domain depth of the crawler')
     parser.add_argument('-cos', action = 'store_const', const = True, default = False, help = 'calculate cosine similarity between provided urls if the option text was enabled')
+    parser.add_argument('-graph', action = 'store_const', const = True, default = False, help = 'draw graph of domains related to specified links')
+    parser.add_argument('-rank', action = 'store_const', const = True, default = False, help = 'rank domains based on standard algorythm')
 
 def main(args = None):
     """The main routine"""
@@ -32,15 +34,12 @@ def main(args = None):
     
     if args.console == False and args.file == None:
         parser.exit("Error, Invalid output target!")
-    try:
-        with Emitter(args.console, args.file) as output:
-            output.clear()
-    
-        c = WebCrawler(args, depth = args.depth)
-        while not c.done:
-            c.crawl()
-    except Exception as e:
-        parser.exit(type(e).__name__ + ': ' + str(e))
+    with Emitter(args.console, args.file) as output:
+        output.clear()
+
+    c = WebCrawler(args, depth = args.depth)
+    while not c.done:
+        c.crawl()
     
 if __name__ == "__main__":
     main()
