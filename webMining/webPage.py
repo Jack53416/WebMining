@@ -2,11 +2,13 @@ import re
 import urlparse
 import httplib
 import itertools
+import numpy as np
+
 from collections import Counter
 from pattern.web import URL, plaintext, DOM, abs, URLError, URLTimeout, HTTP404NotFound, MIMETYPE_WEBPAGE
 from pattern.web import Crawler, HTMLLinkParser
 from pattern.vector import count,words, LEMMA
-from pattern.graph import Graph
+from pattern.graph import Graph, bfs, adjacency
 
 from scipy import spatial
 from emitter import Emitter
@@ -197,7 +199,7 @@ class WebCrawler():
     
     def visit(self, page):
         print 'visited: ', page.url.string
-        if page.isExternal:
+        if page.isExternal and self.options.graph or self.options.rank:
             self.webGraph.node(page.url.domain).fill = (0,1,0,0.5)
             return
         try:
@@ -235,3 +237,38 @@ class WebCrawler():
             
             if self.options.graph:
                 self.webGraph.export('graph', directed=True, width = 1800, height = 1000, repulsion = 10)
+                self.calculatePageRank()
+
+    def calculatePageRank(self):
+        adjMap = adjacency(self.webGraph, directed = True, stochastic = True)
+        domains = adjMap.keys()
+        M = np.zeros((len(domains), len(domains)))
+        for idx, domain in enumerate(domains):
+            connections = adjMap[domain].keys()
+            for connection in connections:
+                M[idx, domains.index(connection)] = adjMap[domain][connection]
+            
+        M = np.transpose(M)
+        #M = np.array([[0,0,0,0,1], [0.5,0,0,0,0], [0.5,0,0,0,0], [0,1,0.5,0,0], [0,0,0.5,1,0]])
+        print self.executeAlgo(M)
+    
+    def executeAlgo(self, M):
+        damping = 0.80
+        error = 0.001
+        N = M.shape[0]
+        print M
+        
+        v = np.ones(N)
+        v = v / np.linalg.norm(v, 1)
+        last_v = np.full(N, np.finfo(float).max)
+        
+        M_hat = np.multiply(M, damping) + np.full((N,N), (1-damping)/N)
+        print M_hat
+        while np.linalg.norm(v - last_v) > error:
+            last_v = v
+            v = np.matmul(M_hat, v)
+        
+        return v/float(sum(v))
+            
+        
+        
