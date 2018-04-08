@@ -4,6 +4,8 @@ from webPage import WebPage, WebCrawler
 from emitter import Emitter
 
 from pattern.web import Crawler, BREADTH, DEPTH
+
+import time
 class Polly(Crawler): 
     def visit(self, link, source=None):
         print 'visited:', repr(link.url), 'from:', link.referrer
@@ -38,8 +40,10 @@ def main(args = None):
         output.clear()
 
     c = WebCrawler(args, depth = args.depth)
+    start = time.time()
     while not c.done:
         c.crawl()
-    
+    end = time.time()
+    print "Exec time: ", end - start
 if __name__ == "__main__":
     main()

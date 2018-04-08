@@ -44,15 +44,20 @@ class WebPage:
             except LookupError as err:
                 print "Warning " + encoding + " is not valid"
     
+    def isWebPage(self):
+        try:
+            return self.url.mimetype in MIMETYPE_WEBPAGE
+        except httplib.InvalidURL:
+            return False
         
     def downloadContent(self):
+        if not self.isWebPage():
+            raise URLError("Invalid or empty content type")
         try:
-            if self.url.mimetype not in MIMETYPE_WEBPAGE:
-                raise URLError(str(self.url.mimetype) + " is not supported content type")
-            self.content = self.url.download(cached = False, timeout = 5)  
+            self.content = self.url.download(timeout = 1)  
         except httplib.InvalidURL:
-            raise URLError("Invalid Url")
-
+            raise URLError("Invalid URL")
+        
         self.decodeContent()
         self.dom = DOM(self.content)
         
@@ -190,6 +195,9 @@ class WebCrawler():
         return False
                 
     def addDomainNode(self, page):
+        match = re.search("\.", page.url.domain)
+        if not match:
+            return
         if page.parent.url.domain == page.url.domain:
             return
         if self.webGraph.node(page.url.domain) is None:
@@ -199,7 +207,7 @@ class WebCrawler():
     
     def visit(self, page):
         print 'visited: ', page.url.string
-        if page.isExternal and self.options.graph or self.options.rank:
+        if page.isExternal and self.options.graph or self.options.rank and page.url.domain not in self.results.keys():
             self.webGraph.node(page.url.domain).fill = (0,1,0,0.5)
             return
         try:
@@ -236,8 +244,12 @@ class WebCrawler():
             output.emitLine("sites visited: " + str(len(self.history)))
             
             if self.options.graph:
-                self.webGraph.export('graph', directed=True, width = 1800, height = 1000, repulsion = 10)
-                self.calculatePageRank()
+                self.webGraph.eigenvector_centrality()
+                self.webGraph.export('graph', directed=True, width = 2200, height = 1600, repulsion = 10)
+            if self.options.rank:
+                ranks = self.calculatePageRank()
+                output.emitLine('')
+                output.emit(ranks)
 
     def calculatePageRank(self):
         adjMap = adjacency(self.webGraph, directed = True, stochastic = True)
@@ -250,25 +262,30 @@ class WebCrawler():
             
         M = np.transpose(M)
         #M = np.array([[0,0,0,0,1], [0.5,0,0,0,0], [0.5,0,0,0,0], [0,1,0.5,0,0], [0,0,0.5,1,0]])
-        print self.executeAlgo(M)
+        #M = np.array([[0,  0.5, 0],[0.5,0.5, 0],  [0.5, 0,  0]])
+        pageScores =  self.executeComputations(M)
+        print pageScores
+        ranks = dict(zip(domains, pageScores))
+        return ranks
     
-    def executeAlgo(self, M):
+    def executeComputations(self, M):
         damping = 0.80
-        error = 0.001
+        error = 0.0000001
         N = M.shape[0]
-        print M
-        
         v = np.ones(N)
         v = v / np.linalg.norm(v, 1)
         last_v = np.full(N, np.finfo(float).max)
-        
+        for i in range(0, N):
+            if sum(M[:, i]) == 0:
+                M[:, i] = np.full(N, 1.0/N)
+            
+
         M_hat = np.multiply(M, damping) + np.full((N,N), (1-damping)/N)
-        print M_hat
         while np.linalg.norm(v - last_v) > error:
             last_v = v
             v = np.matmul(M_hat, v)
-        
-        return v/float(sum(v))
+
+        return np.round(v, 6)
             
         
         
