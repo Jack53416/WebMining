@@ -1,0 +1,209 @@
+div.header {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  padding: 5px;
+  background-color: #011b44;
+}
+
+.backgroundPrimary{
+  background-color: #011b44;
+}
+
+.subHeader{
+  top:0;
+  padding: 3px;
+  text-align: center;
+}
+
+.title{
+    height: 70px;
+	display: table-cell;
+	text-indent: 15px;
+    vertical-align:middle;
+    text-align:left;
+	color: #FFFFFF;
+
+}
+div.content{
+	padding:10px;
+}
+div.footer{
+	height: 32px;
+    margin-top:10px;
+}
+span.error{
+    color: #FF0000;
+    font-style: italic;
+}
+
+#footer-content{
+  background-color:rgba(30, 30, 30, 0.5);
+  height: 20px;
+  padding: 8px;
+  color: #FFFFFF;
+  text-align:center;
+}
+
+#list-item{
+  padding:5px;
+}
+
+#list-info{
+  margin-left: 8px;
+  font-style:italic;
+  font-size: 0.8em;
+}
+
+table.collapsed {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.collapsed td, th {
+    border: 1px solid #dddddd;
+    text-align: center;
+    padding: 8px;
+}
+
+.collapsed tr:nth-child(even) {
+    background-color: #dddddd;
+}
+
+.alert {
+    padding: 20px;
+    margin: 10px;
+    background-color: rgba(255, 0, 0, 0.8);
+    color: white;
+}
+
+.closeButton {
+    color: white;
+    font-weight: bold;
+    float: right;
+    font-size: 22px;
+    line-height: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.closeButton:hover {
+    color: black;
+}
+.backButton{
+    font-weight: bold;
+    float:left;
+    font-size: 55px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.backButton:hover{
+    color:green;
+}
+
+.standardButton {
+	padding: 15px;
+	margin-top: 10px;
+}
+.flexContainer{
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.flexContainer .mainContent{
+  width: 60%;
+}
+
+.flexContainer .sideMenu{
+  width: 40%;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.loginForm{
+  position: absolute;
+  right: 10px;
+  top: 30px;
+  color: white;
+}
+
+.loginHeader{
+  text-align: left;
+}
+.hidden{
+  display: none;
+}
+
+.visible{
+  display: block;
+}
+
+.link{
+  background: none;
+  border: none;
+  color: white;
+}
+
+.colorAccent{
+  color: red;
+}
+
+.colorText{
+  color:white;
+}
+.signUpForm{
+  position:absolute;
+  top: 50%;
+  left: 50%;
+  width:24em;
+  height:18em;
+  margin-top: -9em; /*set to a negative number 1/2 of your height*/
+  margin-left: -12em; /*set to a negative number 1/2 of your width*/
+  border: 1px solid #ccc;
+  background-color: #a3a3a333;
+  z-index: 5;
+}
+
+.newUserForm{
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.searchForm{
+  padding: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  display: table;
+  width: 100%;
+}
+
+.center{
+  vertical-align: center;
+  text-align: center;
+}
+
+.rounded{
+  border-radius: 7px;
+}
+
+.user-form {
+}
+
+.user-form .field { padding: 4px; margin:1px; background: #eee;}
+
+.user-form .field label { display:inline-block; width:120px; margin-left:5px; }
+
+.user-form .field input { display:inline-block; width: 60%;}
+
+
+@keyframes blur {
+  from{
+    filter: blur(0px);
+  }
+  to {
+    filter: blur(5px);
+  }
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="style.css" />
+	<meta charset="utf-8">
+</head>
+<body>
+	<div class="header">
+		<h2 class="title">Some Title</h2>
+
+		<div class="loginForm">
+			<span class="loginHeader">
+				<button class="link" onclick="toggleLoginForm()"><b>Login</b></button> or
+				<button class="link" onclick="toggleSubmitForm()"><b>Sign up<span></b></button>
+			<form id = "loginForm" class="hidden">
+				<label for="email">E-mail</label>
+				<input type = "email" name = "login"/>
+				<label for = "password">Password</label>
+				<input type = "password" name = "password"/>
+				<button type="submit">Log in</button>
+			</form>
+		</div>
+	</div>
+
+
+<div class="signUpForm hidden">
+	<div class="subHeader backgroundPrimary">
+		<span class = "closeButton" onclick = "toggleSubmitForm();">&times;</span>
+		<h2 class="colorText">Register Form</h2>
+	</div>
+	<form class="user-form" onsubmit = "return onSignupSubmit();">
+	    <div class="field">
+	        <label for="firstname">First Name:</label>
+	        <input name="firstname" type="text" size="50" autofocus required/>
+	    </div>
+	    <div class="field">
+	        <label for="lastname">Last Name:</label>
+	        <input type="text" name="lastname" size="50" required/>
+	    </div>
+	    <div class="field">
+	        <label for="birthdate">Birth Date:</label>
+	        <input type="date" name="bdate" size="50" required/>
+	    </div>
+		<div class="field">
+	        <label for="password">Password</label>
+	        <input type="password" name="password" size="50" required/>
+	    </div>
+		<div class="field">
+	        <label for="confPassword">Confirm Password:</label>
+	        <input type="password" name="confPassword" size="50" required />
+	    </div>
+	    <div class = "field" style="height:40px">
+            <input type="submit" align="right" style="float:right; margin-right:5px; margin-top:5px;" required/>
+        </div>
+	<form>
+</div>
+
+	<div class = "alert hidden">
+		<span class = "closeButton" onclick = "this.parentElement.style.display = 'none';">&times;</span>
+		<i><strong><span class = "errorText">{{error}}</span></strong></i>
+	</div>
+
+
+	<div class = 'flexContainer content'>
+		<div class = 'mainContent'>
+			<h3>Buttons</h3>
+			<button type="button" id="But1" class = "standardButton">Button1</button>
+			<button type="button" id="But2" class = "standardButton">Button2</button>
+			<button type="button" id="But3" class = "standardButton">Button3</button><br/>
+			<button type="button" id="But4" class = "standardButton">Button4</button>
+			<button type="button" id="But5" class = "standardButton">Button5</button>
+			<button type="button" id="But6" class = "standardButton">Button6</button><br/>
+		</div>
+
+		<div class= 'sideMenu'>
+		</div>
+	</div>
+
+
+	<div class = "footer">
+	<div id = "footer-content"> Some footer text </div>
+	</div>
+</body>
+<script>
+
+toggleLoginForm.visible = false;
+toggleSubmitForm.visible = false;
+
+function toggleLoginForm(){
+	if(toggleLoginForm.visible)
+		document.getElementById('loginForm').classList = "hidden";
+	else
+		document.getElementById('loginForm').classList = "visible";
+	toggleLoginForm.visible = !toggleLoginForm.visible;
+}
+
+function toggleSubmitForm(){
+	if(toggleSubmitForm.visible){
+		document.querySelector('.signUpForm').classList = "signUpForm hidden";
+		document.querySelector('.flexContainer').style.animation = "";
+	}
+	else{
+		document.querySelector('.signUpForm').classList = "signUpForm visible";
+		let pageContent = document.querySelector('.flexContainer');
+		pageContent.classList = "flexContainer content";
+		pageContent.style.animation = "blur 1s 0.2s linear forwards";
+	}
+	toggleSubmitForm.visible = !toggleSubmitForm.visible;
+}
+
+function onSignupSubmit(event){
+	let password = document.querySelector(".user-form >div.field > input[name='password']");
+	let confirmedPassword = document.querySelector(".user-form > div.field > input[name='confPassword']");
+	console.log(password.value);
+	console.log(confirmedPassword.value);
+	if(password.value != confirmedPassword.value){
+	console.log("here")
+		confirmedPassword.setCustomValidity("Passwords do not match!");
+		return false;
+	}
+	confirmedPassword.setCustomValidity('');
+	return true;
+}
+
+</script>
+</html>
