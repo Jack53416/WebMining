@@ -13,12 +13,13 @@ from pattern.graph import Graph, bfs, adjacency
 from scipy import spatial
 from emitter import Emitter
 
+import operator
 
 class WebPage:
     
-    def __init__(self, url = "", parent = None, depth = 1):
+    def __init__(self, url = "", parent = None, links = [], depth = 1):
         if url:
-            self.url = URL(string = WebPage.parseUrl(url))
+            self.url = WebPage.parseUrl(url)
         self.content = None
         self.dom = None
         self.parent = parent
@@ -27,7 +28,7 @@ class WebPage:
             self.isExternal = parent.isExternal
         else:
             self.isExternal = False
-        self.links = []
+        self.links = links
     
     def __str__(self):
         return self.url.string
@@ -67,10 +68,13 @@ class WebPage:
         return Counter(wordDict)
 
     def getLinks(self):
+        if self.content is None:
+            return self.links
+        
         if len(self.links) == 0:
             links = [abs(x.url, base = self.url.redirect or self.url.string)
                     for x in HTMLLinkParser().parse(self.content, url = self.url.string)]
-            self.links =  [WebPage(x, self, self.depth + 1) for x in links]
+            self.links =  [WebPage(x, self, depth = self.depth + 1) for x in links]
             for link in self.links:
                 if link.url.domain != self.url.domain:
                     link.isExternal = True
@@ -107,7 +111,7 @@ class WebPage:
         if not url.scheme:
             url = url._replace(scheme = 'http')
 
-        return url.geturl()
+        return URL(url.geturl())
 
 class Result(object):
     def __init__(self, wordStats = Counter(), links = set(), images = set(), scripts = set()):
@@ -174,7 +178,7 @@ class WebCrawler():
         except URLError as err:
             return self.fail(site, str(err))
         
-        self.history.append(site)
+        self.history.append()
 
         for link in site.getLinks():
             if self.isValidForQueue(link):
@@ -266,6 +270,7 @@ class WebCrawler():
         pageScores =  self.executeComputations(M)
         print pageScores
         ranks = dict(zip(domains, pageScores))
+        ranks = sorted(ranks.items(), key = operator.itemgetter(1))
         return ranks
     
     def executeComputations(self, M):
