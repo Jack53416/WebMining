@@ -1,6 +1,6 @@
 import sys
 import argparse
-from webPage import WebPage, WebCrawler
+from crawler import WebCrawler
 from emitter import Emitter
 
 from pattern.web import Crawler, BREADTH, DEPTH
