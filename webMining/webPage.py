@@ -1,17 +1,18 @@
 import re
 import urlparse
 import httplib
+import hashlib
 
 from collections import Counter
 from pattern.web import URL, plaintext, DOM, abs, URLError, URLTimeout, HTTP404NotFound, MIMETYPE_WEBPAGE
 from pattern.web import Crawler, HTMLLinkParser
 from pattern.vector import count,words, LEMMA
+from datetime import datetime
 
 from emitter import Emitter
+from amazon import CloudWebsiteDocument
 
-import operator
-
-class WebPage:
+class WebPage(CloudWebsiteDocument):
     
     def __init__(self, url = "", parent = None, links = [], depth = 1, isExternal = False):
         if url:
@@ -106,5 +107,20 @@ class WebPage:
             url = url._replace(scheme = 'http')
 
         return URL(url.geturl())
-        
+    
+    @property
+    def cloudSearchId(self):
+        return hashlib.sha224(self.url.string).hexdigest()
+    
+    def toJson(self):
+        try:
+            content = plaintext(self.dom.body.content)
+        except AttributeError:
+            content = None
+        return {
+                'address': self.url.string,
+                'domain': self.url.domain,
+                'content': content,
+                'last_update': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+                }
         

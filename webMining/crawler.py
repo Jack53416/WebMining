@@ -12,6 +12,7 @@ from scipy import spatial
 from emitter import Emitter
 from webPage import WebPage
 from database import WebsiteDatabase
+from amazon import CloudSearchIndexer
 
 import operator
 
@@ -62,10 +63,15 @@ class WebCrawler():
         self.options = args
         self.results = {link.url.domain : Result() for link in self.links}
         
+        self.cloudIndexer = CloudSearchIndexer.forDomainIndex("websites")
+        
         if args.graph or args.rank:
             self.webGraph = Graph(distance = 30.0) 
             for link in self.links:
                 self.webGraph.add_node(link.url.domain, radius = 15, fill = (1, 0, 0, 0.5))
+    
+    def __del__(self):
+        self.cloudIndexer._commitToAmazon()
         
     def crawl(self):
         if len(self.links) < 1:
@@ -104,7 +110,9 @@ class WebCrawler():
                         self.links.append(link)
                 elif not link.isExternal and site.depth < self.depth:
                     self.links.insert(0, link)
-        self.visit(site)
+                    
+        if not self.historyDb.wasPageVisited(site):
+            self.visit(site)
         site.cleanCashedData()
 
     def isValidForQueue(self, link):
@@ -128,6 +136,8 @@ class WebCrawler():
     
     def visit(self, page):
         print 'visited: ', page.url.string, ' domain: ', page.url.domain, 'graph', self.options.graph
+        self.cloudIndexer.addDocument(page)
+        
         if page.isExternal and self.options.graph and page.url.domain not in self.results.keys():
             self.webGraph.node(page.url.domain).fill = (0,1,0,0.5)
         try:
