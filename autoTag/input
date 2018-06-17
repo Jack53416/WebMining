@@ -1,0 +1,7 @@
+How to make html table from sql linq in C#?
+
+I'd like to simply add an html table to a placeholder without iterating through all the cells and rows.
+
+My sql statement is like this, but VS is unavailable for me to debug and I'm unsure how to treat q for length/count to iterate through. I am new to this so coming up with the correct vocabulary in my head of how to search this solution is difficult.
+
+Is there a simple linq statement to put this in a placeholder?
