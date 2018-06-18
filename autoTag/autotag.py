@@ -31,17 +31,17 @@ class Tagger(object):
         self.trainingSet = [({word: (word in word_tokenize(trainSample[0])) for word in self.trainKeywords}, trainSample[1]) for trainSample in trainList]
         
 
-multiple_train_data = [('.net c# wpf uwp asp.net xamarin', ['.net', 'c#']),
-                       ('autofac windsor simpleinjector', ['ioc', 'container']),
-                       ('postgre sqlserver mongo cassandra oracle mysql', ['database']),
-                       ('aws azure', ['cloud']),
-                       ('c++ cmake boost opencv iostream visual-c++ memory-leak', ['c++'])
-                       ]
+trainData = [('.net c#', ['c#']),
+            ('postgre sqlserver mongo oracle mysql', ['database']),
+            ('aws azure amazon web-services', ['cloud']),
+            ('device iot arduino', ['iot']),
+            ('c++ cmake boost opencv iostream visual-c++ memory-leak', ['c++'])
+            ]
 
 
 
 with open("input", "r") as f:
     content = f.read().replace('\n', '');
     print(content.lower())
-    tagger = Tagger(multiple_train_data)
+    tagger = Tagger(trainData)
     print(tagger.tag(content))
